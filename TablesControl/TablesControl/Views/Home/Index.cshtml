@@ -1,0 +1,252 @@
+﻿
+	<br />
+<div class="row justify-content-center" style="text-align:right;">
+	<div class="col col-5 col-lg-5 col-md-5 col-sm-5">
+		<table id="productionTable" class="table table-striped table-bordered" style="width:100%">
+			<thead>
+				<tr>
+					<th style="text-align:center;" colspan="6">Üretim Operasyon Bildirimleri</th>
+				</tr>
+				<tr>
+					<th>İş No</th>
+					<th>Başlangıç</th>
+					<th>Bitiş</th>
+					<th>Toplam Süre(Saat)</th>
+					<th>Statü</th>
+					<th>Duruş Nedeni</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+	<div class="col col-3 col-lg-3 col-md-3 col-sm-3">
+		<table id="breakTable" class="table table-striped table-bordered" style="width:100%">
+			<thead>
+				<tr>
+					<th style="text-align:center;" colspan="3">Standart Duruşlar</th>
+				</tr>
+				<tr>
+					<th>Başlangıç</th>
+					<th>Bitiş</th>
+					<th>Duruş Nedeni</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+</div>
+<br />
+<div class="row justify-content-center" style="text-align:right;">
+	<div class="col col-8 col-lg-8 col-md-8 col-sm-8">
+		<table id="resultProductionTable" class="table table-striped table-bordered" style="width:100%">
+			<thead>
+				<tr>
+					<th style="text-align:center;" colspan="6">Üretim Operasyon Bildirimleri</th>
+				</tr>
+				<tr>
+					<th>İş No</th>
+					<th>Başlangıç</th>
+					<th>Bitiş</th>
+					<th>Toplam Süre(Saat)</th>
+					<th>Statü</th>
+					<th>Duruş Nedeni</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+	var productionData = [
+		[
+			"1",
+			"23.05.2020 07:30",
+			"23.05.2020 08:30",
+			"01:00",
+			"ÜRETİM",
+			""
+		],
+		[
+			"2",
+			"23.05.2020 08:30",
+			"23.05.2020 11:00",
+			"02:30",
+			"ÜRETİM",
+			""
+		],
+		[
+			"3",
+			"23.05.2020 11:00",
+			"23.05.2020 13:00",
+			"02:00",
+			"ÜRETİM",
+			""
+		],
+		[
+			"4",
+			"23.05.2020 13:00",
+			"23.05.2020 13:45",
+			"00:45",
+			"DURUŞ",
+			"ARIZA"
+		],
+		[
+			"5",
+			"23.05.2020 13:45",
+			"23.05.2020 17:30",
+			"03:45",
+			"ÜRETİM",
+			""
+		]
+	];
+	var breakData = [
+		[
+			"10:00",
+			"10:15",
+			"Çay Molası"
+		],
+		[
+			"12:00",
+			"12:30",
+			"Yemek Molası"
+		],
+		[
+			"15:00",
+			"15:15",
+			"Çay Molası"
+		]
+	];
+	var result = []; //üretim ve duruş tablolarının birleşimi	
+
+	
+	//data = data.concat(data2);
+
+	$(document).ready(function () {
+		$('#productionTable').DataTable({
+			data: productionData,
+			searching: false,
+			ordering: false,
+			paging: false,
+			info: false,
+			order: [[2, 'asc']]
+		});
+
+		$('#breakTable').DataTable({
+			data: breakData,
+			searching: false,
+			ordering: false,
+			paging: false,
+			info: false,
+			order: [[2, 'asc']]
+		});
+
+		ProductionOperation(productionData, breakData);
+
+		$('#resultProductionTable').DataTable({
+			data: result,
+			searching: false,
+			ordering: false,
+			paging: false,
+			info: false,
+			order: [[2, 'asc']]
+		}); 
+	});
+
+	// Bu method yazılırken sıralı oldukları düşünülmüştür.
+	function ProductionOperation(productionData, breakData) {
+
+		while (productionData.length != 0 || breakData.length != 0) {
+			//Eğer duruş ile üretim kesişiyorsa
+			if (breakData.length != 0 && ConversionToMinutes(productionData[0][2]) > ConversionToMinutes(breakData[0][0])) {
+				//Bitiş zamanı duruş zamanına kadar hesaplanır.
+				productionData[0][1] = "23.05.2020 " + Display(result[result.length - 1][2]);
+				//Bitiş zamanı duruş zamanına kadar hesaplanır.
+				productionData[0][2] = "23.05.2020 " + breakData[0][0];
+				//Duruş zamanına kadar olan süre hesaplanır.
+				var firstTotalTime = productionData[0][3];
+				productionData[0][3] = DisplayTheDifferent(productionData[0][1], breakData[0][0]);
+				//Duruş satırımızı , üretim operasyon satırı için düzenliyoruz.
+				var tempBreakData = [productionData[0][0], "23.05.2020 " + breakData[0][0], "23.05.2020 " + breakData[0][1], DisplayTheDifferent(breakData[0][0], breakData[0][1]), "DURUŞ", breakData[0][2]];
+				// ilk önce üretimi sonra duruşu ekliyoruz.
+				result.push(productionData[0]);
+				result.push(tempBreakData);
+				//duruştan sonraki kalan işi hesaplıyoruz.
+				var totalTime = DisplayTheDifferent(DisplayTheDifferent(productionData[0][1], breakData[0][0]), firstTotalTime);
+				var tempProductionData = [productionData[0][0], "23.05.2020 " + breakData[0][1], "23.05.2020 " + DisplayTheTotal(totalTime, breakData[0][1]), totalTime, "ÜRETİM", ""];
+				
+				//üretimi ve duruş ekledikten sonra siliyoruz ve kalan üretimi tekrar ekliyoruz.
+				productionData.shift();
+				breakData.shift();
+				productionData.unshift(tempProductionData);		
+
+			}
+			//Eğer sonraki üretim ile kesişiyorsa
+			else if (result.length != 0 && ConversionToMinutes(result[result.length - 1][2]) > ConversionToMinutes(productionData[0][1])) {
+				//Bitiş zamanı duruş zamanına kadar hesaplanır.
+				productionData[0][1] = "23.05.2020 " + Display(result[result.length - 1][2]);
+				//Bitiş zamanı duruş zamanına kadar hesaplanır.
+				productionData[0][2] = "23.05.2020 " + DisplayTheTotal(result[result.length - 1][2], productionData[0][3]);
+				//üretimi ekledikten sonra siliyoruz
+				result.push(productionData[0]);
+				productionData.shift();
+			}
+			else {
+				//üretimi ekledikten sonra siliyoruz
+				result.push(productionData[0]);
+				productionData.shift();
+			}
+		}
+	}
+
+	//minutes
+	function ConversionToMinutes(date) {
+		
+		//saatleri ayırma
+		_date = date.substr(date.length - 5);
+		//saat-dakika
+		_date = _date.split(/[:]/);
+		//dakika cinsinden toplamı
+		return parseInt(_date[0]) * 60 + parseInt(_date[1]);
+	}
+	function Total(earlyDate, lateDate) {
+		//saatleri ayırma
+		_earlyDate = earlyDate.substr(earlyDate.length - 5);
+		_lateDate = lateDate.substr(lateDate.length - 5);
+		//saat-dakika
+		_earlyDate = _earlyDate.split(/[:]/);
+		_lateDate = _lateDate.split(/[:]/);
+		//dakika cinsinden toplamı
+
+		return (new Date(0, 0, 0, _lateDate[0], 0).getHours() * 60 + new Date(0, 0, 0, 0, _lateDate[1]).getMinutes()) + (new Date(0, 0, 0, _earlyDate[0], 0).getHours() * 60 + new Date(0, 0, 0, 0, _earlyDate[1]).getMinutes());
+	}
+	function Different(earlyDate, lateDate) {
+		//saatleri ayırma
+		_earlyDate = earlyDate.substr(earlyDate.length - 5);
+		_lateDate = lateDate.substr(lateDate.length - 5);
+		//saat-dakika
+		_earlyDate = _earlyDate.split(/[:]/);
+		_lateDate = _lateDate.split(/[:]/);
+		//dakika cinsinden farkı
+		return (new Date(0, 0, 0, _lateDate[0], _lateDate[1]) - new Date(0, 0, 0, _earlyDate[0], _earlyDate[1])) / 1000 / 60;
+	}
+	//00:00 formats
+	function DisplayTheDifferent(earlyDate, lateDate) {
+		//Fark
+		var dif = Different(earlyDate, lateDate);
+		//00:00 format
+		return String(parseInt((dif / 60), 10)).padStart(2, '0') + ":" + String((dif % 60)).padStart(2, '0');
+	}
+	function DisplayTheTotal(earlyDate, lateDate) {
+		//Toplam
+		var total = Total(earlyDate, lateDate);
+		//00:00 format
+		return String(parseInt((total / 60), 10)).padStart(2, '0') + ":" + String((total % 60)).padStart(2, '0');
+	}
+	function Display(date) {
+		//saatleri ayırma
+		_date = date.substr(date.length - 5);
+		//saat-dakika
+		_date = _date.split(/[:]/);
+		//00:00 format
+		return String(parseInt(_date[0], 10)).padStart(2, '0') + ":" + String(parseInt(_date[1], 10)).padStart(2, '0');
+	}
+</script>
